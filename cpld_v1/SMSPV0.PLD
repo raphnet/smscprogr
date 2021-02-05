@@ -1,0 +1,76 @@
+Name     smspv0 ;
+PartNo   00 ;
+Date     7/4/2020 ;
+Revision 01 ;
+Designer Raphael Assenat ;
+Company  raphnet. ;
+Assembly None ;
+Location  ;
+Device   f1502isptqfp44 ;
+
+property   atmel {cascade_logic=on};
+property   atmel {logic_doubling=on};
+property   atmel {output_fast=on};
+property   atmel {pin_keep=on};
+property   atmel {preassign=keep};
+property   atmel {security=off};
+property   atmel {xor_synthesis=on};
+
+/* *************** INPUT PINS *********************/
+PIN   35  = nCE;
+PIN   28  = CPLD0;
+PIN   27  = CPLD1;
+PIN   25  = CPLD2;
+PIN   23  = CPLD3;
+PIN   22  = REG0;	/* CPLD4 on PCB */
+PIN   21  = REG1;	/* CPLD5 on PCB */
+PIN   20  = CPLD6;
+PIN   37  = LE;		/* CPLD7 on PCB */
+PIN   30  = CPLD8;
+
+/* *************** OUTPUT PINS *********************/
+PIN   34  = nM8B;
+PIN   33  = nM07;
+PIN   31  = nMCF;
+PIN   10   = A0;
+PIN   11   = A1;
+PIN   6   = A2;
+PIN   8   = A3;
+PIN   3   = A4;
+PIN   5  = A5;
+PIN   44  = A6;
+PIN   2  = A7;
+PIN   14  = A8;
+PIN   15  = A9;
+PIN   19  = A10;
+PIN   18  = A11;
+PIN   43  = A12;
+PIN   13  = A13;
+PIN   12  = A14;
+PIN   42  = A15;
+
+FIELD sms_address = [A0..15];
+FIELD input_nibble = [CPLD0..3];
+PINNODE = [A_0..4];
+PINNODE = [B_0..4];
+PINNODE = [C_0..4];
+PINNODE = [D_0..4];
+
+/* Address range decoding for cartridge */
+nM07 = nCE # A15;		/* Pages 0 and 1 */
+nM8B = nCE # !(A15 & !A14);	/* Page 2 */
+nMCF = nCE # !(A15 & A14);	/* Page 3 (usually console RAM) */
+
+/* Latches for address bits */
+[A_0..3].le = [LE,LE,LE,LE] & (!REG0 & !REG1);
+[A_0..3].l = [CPLD0..3];
+[B_0..3].le = [LE,LE,LE,LE] & (REG0 & !REG1);
+[B_0..3].l = [CPLD0..3];
+[C_0..3].le = [LE,LE,LE,LE] & (!REG0 & REG1);
+[C_0..3].l = [CPLD0..3];
+[D_0..3].le = [LE,LE,LE,LE] & (REG0 & REG1);
+[D_0..3].l = [CPLD0..3];
+
+/* Output address to the cartridge based on registers */
+sms_address = [A_0..3, B_0..3, C_0..3, D_0..3];
+

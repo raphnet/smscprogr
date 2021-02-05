@@ -1,0 +1,63 @@
+Name     smspv0;
+PartNo   00;
+Date     7/4/2020;
+Revision 01;
+Designer Raphael Assenat;
+Company  raphnet.;
+Assembly None;
+Location ;
+Device   f1502isptqfp44;
+
+
+ORDER: CPLD3, CPLD2, CPLD1, CPLD0,
+	REG1, REG0,
+	LE,
+      	A15, A14, A13, A12, A11, A10, A9, A8, A7, A6, A5, A4, A3, A2, A1, A0,
+	nCE,
+	nM07, nM8B, nMCF;
+
+
+VECTORS:
+$TRACE 1;
+
+$MSG  "Init regs";
+0000 00 0 **************** 1 HHH
+0000 00 1 **************** 1 HHH
+0000 00 0 **************** 1 HHH
+0000 01 1 **************** 1 HHH
+0000 00 0 **************** 1 HHH
+0000 10 1 **************** 1 HHH
+0000 00 0 **************** 1 HHH
+0000 11 1 **************** 1 HHH
+$MSG  "Check addr=0000";
+0000 00 0 LLLLLLLLLLLLLLLL 1 HHH
+$MSG  "Test decode slot 0";
+0000 00 0 LLLLLLLLLLLLLLLL 0 LHH
+
+$MSG  "Set addr=4000";
+0100 11 1 LHLLLLLLLLLLLLLL 1 HHH
+0000 11 0 LHLLLLLLLLLLLLLL 1 HHH
+$MSG  "Test decode slot 1";
+0000 00 0 LHLLLLLLLLLLLLLL 0 LHH
+
+
+$MSG  "Set addr=8000";
+1000 11 1 HLLLLLLLLLLLLLLL 1 HHH
+0000 11 0 HLLLLLLLLLLLLLLL 1 HHH
+$MSG  "Test decode slot 2";
+0000 00 0 HLLLLLLLLLLLLLLL 0 HLH
+
+$MSG  "Set addr=C000";
+1100 11 1 HHLLLLLLLLLLLLLL 1 HHH
+0000 11 0 HHLLLLLLLLLLLLLL 1 HHH
+$MSG  "Test decode slot 3";
+0000 00 0 HHLLLLLLLLLLLLLL 0 HHL
+
+$MSG  "Test regs...";
+0000 11 1 LLLL LLLL LLLL LLLL 1 HHH
+0101 00 1 LLLL LLLL LLLL LHLH 1 HHH
+0110 01 1 LLLL LLLL LHHL LHLH 1 HHH
+1001 10 1 LLLL HLLH LHHL LHLH 1 HHH
+1110 11 1 HHHL HLLH LHHL LHLH 1 HHH
+
+

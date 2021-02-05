@@ -14,6 +14,9 @@ visit the project page:
 
 ## Compilation
 
+
+### AVR firmware
+
 On a Linux or Unit system, with make, gcc-avr and avr-libc installed and in your path, it should be
 a simple matter of typing "make".
 
@@ -22,6 +25,20 @@ set in udev, you should be able to type "make flash" to program the micro-contro
 
 If you are reprogramming or upgrading, you must enter bootloader mode first by using the "boot" command
 in the virtual com port.
+
+
+### CPLD
+
+You will need WinCUPL, which is at this date (2021-02) available for free from
+microchip here:
+
+[WinCUPL](https://www.microchip.com/en-us/products/fpgas-and-plds/spld-cplds/pld-design-resources)
+
+I could not get the GUI to work reliably on my system (it kept crashing,
+especially in simulation) so instead I use batch files. But it's probably
+better like this anyway.
+
+Run setup.bat once (optionally edit it first if the paths are different on your system), then run compile.bat to compile and generate a new .JED file and use the ATMISP tool to program the CPLD.
 
 
 ## Use
