@@ -8,7 +8,7 @@ VERSIONBCD=0x0100
 CFLAGS=-Wall -mmcu=$(CPU) -DF_CPU=16000000L -DF_EXTERNAL=F_CPU -Os -DVERSIONSTR=$(VERSIONSTR) -DVERSIONBCD=$(VERSIONBCD)
 LDFLAGS=-mmcu=$(CPU) -Wl,-Map=$(PROGNAME).map
 
-HEXFILE=smscprg1.hex
+HEXFILE=smscprogr.hex
 OBJS=main.o usb.o usbcomm.o usbstrings.o menu.o cartio.o bootloader.o flash.o
 
 all: $(HEXFILE)
@@ -25,7 +25,7 @@ clean:
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-smscprg1.elf: $(OBJS)
+smscprogr.elf: $(OBJS)
 	$(LD) $^ $(LDFLAGS) -o $@
 
 %.hex: %.elf
