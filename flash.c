@@ -18,80 +18,30 @@
 #include "cartio.h"
 #include "flash.h"
 
+static struct flashops *ops = &flash_29f040_ops;
+
 uint16_t flash_readSiliconID(void)
 {
-	uint16_t id;
-
-	// Step 1: Write AA to address 555
-	cartWrite(0x0555, 0xAA);
-	// Step 2: Write 55 to address 2AA
-	cartWrite(0x02AA, 0x55);
-	// Step 3: Write 90 to address 555
-	cartWrite(0x0555, 0x90);
-
-	id = cartRead(0x0000);
-	id |= cartRead(0x0001) << 8;
-
-	cartWrite(0x0000, 0xF0);
-
-	return id;
+	return ops->readSiliconID();
 }
 
 char flash_detect(void)
 {
-	uint16_t mem, id;
-
-	mem = cartRead(0x0000);
-	mem |= cartRead(0x0001) << 8;
-
-	id = flash_readSiliconID();
-
-	return id != mem;
+	return ops->detect();
 }
 
 void flash_chipErase(void)
 {
-	// Step 1: Write AA to address 555
-	cartWrite(0x0555, 0xAA);
-	// Step 2: Write 55 to address 2AA
-	cartWrite(0x02AA, 0x55);
-	// Step 3: Write 80 to address 555
-	cartWrite(0x0555, 0x80);
-	// Step 4: Write AA to address 555
-	cartWrite(0x0555, 0xAA);
-	// Step 5: Write 55 to address 2AA
-	cartWrite(0x02AA, 0x55);
-	// Step 3: Write 10 to address 555
-	cartWrite(0x0555, 0x10);
-
-	while (!(cartRead(0x0000) & 0x80)) {
-	}
-
-	cartWrite(0x0000, 0xF0);
+	ops->chipErase();
 }
 
 void flash_programBytes(uint16_t cartAddr, uint8_t *data, int len)
 {
-	while (len--) {
-		// Step 1: Write AA to address 555
-		cartWrite(0x0555, 0xAA);
-		// Step 2: Write 55 to address 2AA
-		cartWrite(0x02AA, 0x55);
-		// Step 3: Write A0 to address 555
-		cartWrite(0x0555, 0xA0);
-
-		cartWrite(cartAddr, *data);
-
-		// Now poll Q7 for completion. Q7 is the complement
-		// of what was written until completion.
-		while ((cartRead(cartAddr)&0x80) != ((*data)&0x80));
-
-		cartAddr++;
-		data++;
-	}
+	ops->programBytes(cartAddr, data, len);
 }
 
 void flash_programByte(uint16_t cartAddr, uint8_t b)
 {
-	flash_programBytes(cartAddr, &b, 1);
+	ops->programByte(cartAddr, b);
 }
+
