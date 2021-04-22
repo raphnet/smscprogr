@@ -98,8 +98,8 @@ static uint16_t crc16_cartrange(uint16_t addr_start, uint16_t len)
 
 static void initMapper(void)
 {
-	// Disable RAM
-	cartWrite(0xFFFC, 0);
+	// Disable RAM, Enable ROM write
+	cartWrite(0xFFFC, 0x80);
 	// Slot 0 -> Bank 0
 	cartWrite(0xFFFD, 0);
 	// Slot 1 -> Bank 1
