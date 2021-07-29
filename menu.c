@@ -158,6 +158,7 @@ static void initCart(const char *line, int length)
 	int i;
 
 	initMapper();
+	flash_init();
 
 	putchar(' ');
 	cartReadBytes(0x7FF0, 16, rom_header);
@@ -215,6 +216,12 @@ static void initCart(const char *line, int length)
 
 		if (id == 0xa4c2) {
 			puts_P(PSTR("MX29F040 (supported)\n"));
+		}
+		else if (id == 0xa7c2) {
+			puts_P(PSTR("MX29LV320 (supported)\n"));
+		}
+		else if (id == 0x5001) {
+			puts_P(PSTR("S29JL032 (supported)\n"));
 		} else {
 			puts_P(PSTR(" (unknown/unsupported)\n"));
 		}
