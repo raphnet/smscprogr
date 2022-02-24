@@ -3,11 +3,13 @@
 # apt install python3-serial
 # pip3 install xmodem
 
-import serial, sys, logging, argparse
+import serial, sys, logging, argparse, datetime
 from xmodem import XMODEM
 
 rxbytes = 0
 rxbytes2 = 0
+last_exch_start_time_start = 0
+last_exch_duration = 0
 
 def sendCommand(command):
     print("Sending command: " + command)
@@ -22,6 +24,9 @@ def sendAbort():
 
 
 def exchangeCommand(command, ender="\r\n> ", atEnd=True):
+    global last_exch_duration
+    global last_exch_start_time_start
+    last_exch_start_time_start = datetime.datetime.now()
     ser.reset_input_buffer()    # Drop any unread characters
     sendCommand(command)        # Send the command
     # Now wait to the answer
@@ -38,11 +43,12 @@ def exchangeCommand(command, ender="\r\n> ", atEnd=True):
             else:
                 if ender in answer:
                     break
+    last_exch_duration = (datetime.datetime.now() - last_exch_start_time_start).total_seconds();
     return answer
 
 
 def download(outfile):
-    print("Starting downlaod")
+    print("Starting download")
     # Initiate xmodem download
     exchangeCommand("dx", "CTRL+C to cancel.\r\n")
 
@@ -57,6 +63,7 @@ def download(outfile):
 
 def upload(infile):
     print("Starting upload")
+    time_start = datetime.datetime.now()
     # Initiate xmodem download
     exchangeCommand("ux", "READY. Please start uploading.\r\n", atEnd=False)
 
@@ -64,8 +71,9 @@ def upload(infile):
     print("Uploading", end="", flush=True)
     n = xm.send(infile, retry=102, quiet=False )
     print("") # newline
+    duration = (datetime.datetime.now() - time_start).total_seconds();
     if n:
-        print("Upload completed with success.")
+        print("Upload completed with success in ", duration, "seconds")
     else:
         print("Upload error")
     return n
@@ -142,6 +150,7 @@ if (args.infile != None):
     print(tmp)
     tmp = exchangeCommand("ce")
     print(tmp)
+    print("Chip erase completed in", last_exch_duration, " seconds")
     upload(args.infile)
     tmp = exchangeCommand("")
 

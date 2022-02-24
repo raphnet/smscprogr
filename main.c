@@ -214,7 +214,7 @@ void hwinit(void)
 	/* PORTC
 	 *
 	 * 7: CPLD7	Output low LE
-	 * 6: CPLD8	Output low
+	 * 6: CPLD8	Output low - used for clocking
 	 * 5: nCE	Output high
 	 * 4: nWR	Output high
 	 * 3: (no such pin)
@@ -251,7 +251,7 @@ static uint16_t cdcacm_sendBytes(const uint8_t *data, uint16_t length)
 {
 	if (usb_interruptReady(2)) {
 		usb_interruptSend(2, data, length);
-		while (!usb_interruptReady(2));
+	//	while (!usb_interruptReady(2));
 		return length;
 	}
 	return 0;

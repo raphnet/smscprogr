@@ -24,6 +24,7 @@
 #include "menu.h"
 #include "bootloader.h"
 #include "cartio.h"
+#include "mapper.h"
 #include "usbcomm.h"
 #include "flash.h"
 
@@ -96,26 +97,14 @@ static uint16_t crc16_cartrange(uint16_t addr_start, uint16_t len)
 	return crc;
 }
 
-static void initMapper(void)
-{
-	// Disable RAM, Enable ROM write
-	cartWrite(0xFFFC, 0x80);
-	// Slot 0 -> Bank 0
-	cartWrite(0xFFFD, 0);
-	// Slot 1 -> Bank 1
-	cartWrite(0xFFFE, 1);
-	// Slot 2 -> Bank 2
-	cartWrite(0xFFFF, 2);
-}
-
 static void debug2()
 {
 	uint8_t i;
 	uint8_t tmpbuf[16] = { };
 
-	initMapper();
+	mapper_init(MAPPER_TYPE_SEGA);
 	for (i=0; i<6; i++) {
-		cartWrite(0xFFFF, i);
+		mapper_setSlot(SLOT2, i);
 		tmpbuf[0] = i;
 		tmpbuf[1] = i+2;
 		flash_programBytes(0x8000, tmpbuf, 16);
@@ -123,12 +112,32 @@ static void debug2()
 	newline();
 }
 
+static void debug_m1()
+{
+	uint8_t tmpbuf[16];
+	uint16_t id;
+
+	mapper_init(MAPPER_TYPE_SEGA);
+
+	// Macronix byte mode
+	cartWrite(0xAAA, 0xAA);
+	cartWrite(0x555, 0x55);
+	cartWrite(0xAAA, 0x90);
+	id = cartRead(0x00);
+	id |= cartRead(0x02) << 8;
+
+	printf_P(PSTR("Silicon ID %04x\n"), id);
+
+	// Reset
+	cartWrite(0x0000, 0xF0);
+
+}
 static void debug1()
 {
 	uint8_t tmpbuf[16];
 	uint8_t i;
 
-	initMapper();
+	mapper_init(MAPPER_TYPE_SEGA);
 	printf_P(PSTR("0000[ ]"));
 	cartReadBytes(0x0000, 8, tmpbuf);
 	printHex(tmpbuf, 8);
@@ -140,7 +149,7 @@ static void debug1()
 	newline();
 
 	for (i=0; i<6; i++) {
-		cartWrite(0xFFFF, i);
+		mapper_setSlot(SLOT2,i);
 		cartReadBytes(0x8000, 8, tmpbuf);
 		printf_P(PSTR("8000[%d]"), i);
 		printHex(tmpbuf, 8);
@@ -157,14 +166,15 @@ static void initCart(const char *line, int length)
 	uint16_t id, read_addr;
 	int i;
 
-	initMapper();
+	mapper_init(MAPPER_TYPE_SEGA);
+	flash_init();
 
 	putchar(' ');
 	cartReadBytes(0x7FF0, 16, rom_header);
 	printHex(rom_header, 16);
 	newline();
 
-	cartWrite(0xFFFF, 0);
+	mapper_setSlot(SLOT2,0);
 	bank0_crc = crc16_cartrange(0x0000, 16384);
 	bank0_first = cartRead(0x00);
 	printf_P(PSTR("Bank %d CRC: %04x, first byte %02x\n"), 0, bank0_crc, bank0_first);
@@ -177,7 +187,7 @@ static void initCart(const char *line, int length)
 			read_addr = 0x4000;
 		} else {
 			read_addr = 0x8000;
-			cartWrite(0xFFFF, i);
+			mapper_setSlot(SLOT2,i);
 		}
 		first_byte = cartRead(read_addr);
 
@@ -215,6 +225,12 @@ static void initCart(const char *line, int length)
 
 		if (id == 0xa4c2) {
 			puts_P(PSTR("MX29F040 (supported)\n"));
+		}
+		else if (id == 0xa7c2) {
+			puts_P(PSTR("MX29LV320 (supported)\n"));
+		}
+		else if (id == 0x5001) {
+			puts_P(PSTR("S29JL032 (supported)\n"));
 		} else {
 			puts_P(PSTR(" (unknown/unsupported)\n"));
 		}
@@ -222,7 +238,7 @@ static void initCart(const char *line, int length)
 		puts_P(PSTR("Cartridge type: ROM"));
 	}
 
-	initMapper();
+	mapper_init(MAPPER_TYPE_SEGA);
 }
 
 static void readaddress(const char *line, int length)
@@ -278,23 +294,63 @@ void flashWrite(const char *line, int length)
 	usbcomm_drain();
 
 	// Access the flash through slot 2
-	cartWrite(0xFFFF, addr >> 14);
+	mapper_setSlot(SLOT2, addr >> 14);
 	flash_programByte(0x8000 | (addr & 0x3FFF), b);
 
+
+	// TODO : This does not seem necessary - review
 	// Slot 2 -> Bank 2
-	cartWrite(0xFFFF, 2);
+	mapper_setSlot(SLOT2, 2);
 
 }
 
-static int waitChar(int timeout_cs)
+static int waitChar(uint16_t timeout_ms)
 {
-	int i;
+	int i,j;
 
-	for (i=0; i<timeout_cs; i++) {
-		if (usbcomm_hasData()) {
-			return usbcomm_rxbyte();
+	for (i=0; i<timeout_ms; i++) {
+		for (j=0; j<10; j++) {
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
+			if (usbcomm_hasData()) {
+				return usbcomm_rxbyte();
+			}
+			_delay_us(10);
 		}
-		_delay_ms(1);
 	}
 	return -1;
 }
@@ -308,7 +364,7 @@ static uint8_t s_packetbuf[133];
 void uploadXmodem(const char *line, int length)
 {
 	uint8_t state = STATE_WAIT_SOH;
-	uint8_t send_nack;
+	uint8_t send_nack, skip_ack=0;
 	uint8_t packet_size = 132;
 	uint8_t datpos = 0;
 	uint32_t rom_addr = 0;
@@ -322,13 +378,16 @@ void uploadXmodem(const char *line, int length)
 	while (1)
 	{
 		b = -1;
-		for (c=0; c<15; c++) {
+		for (c=0; c<10000; c++) {
 			if (state == STATE_WAIT_SOH) {
-				putchar(send_nack ? 0x15 : 0x06);
-				usbcomm_drain();
+				if (!skip_ack) {
+					putchar(send_nack ? 0x15 : 0x06);
+					usbcomm_drain();
+				}
+				skip_ack = 0;
 			}
 
-			b = waitChar(5000); // 5 seconds
+			b = waitChar(500); // 0.5
 			if (b >= 0)
 				break;
 		}
@@ -371,8 +430,13 @@ void uploadXmodem(const char *line, int length)
 				if (s_packetbuf[1] != last_packet_id) {
 					// New packet
 
+					// Send ACK now, so the host gets notified while programming is taking place
+//					putchar(0x06);
+//					usbcomm_drain();
+//					skip_ack = 1;
+
 					// Access the flash through slot 2
-					cartWrite(0xFFFF, rom_addr >> 14);
+					mapper_setSlot(SLOT2, rom_addr >> 14);
 					flash_programBytes(0x8000 | (rom_addr & 0x3FFF), &s_packetbuf[3], 128);
 					rom_addr += 128;
 					send_nack = 0;
@@ -431,9 +495,9 @@ void downloadXmodem(const char *line, int length)
 	s_packetbuf[0] = 0x01; // SOH
 
 	// Slot 0 -> Bank 0
-	cartWrite(0xFFFD, 0);
+	mapper_setSlot(SLOT0, 0);
 	// Slot 1 -> Bank 1
-	cartWrite(0xFFFE, 1);
+	mapper_setSlot(SLOT1, 1);
 
 	for (i=0; i<n_blocks; i++)
 	{
@@ -443,7 +507,7 @@ void downloadXmodem(const char *line, int length)
 			cartReadBytes(rom_addr, 128, s_packetbuf + 3);
 		} else {
 			// Use slot2 as a window in the ROM
-			cartWrite(0xFFFF, rom_addr >> 14);
+			mapper_setSlot(SLOT2, (rom_addr >> 14));
 			cartReadBytes(0x8000 | (rom_addr & 0x3FFF), 128, s_packetbuf + 3);
 		}
 
@@ -513,8 +577,8 @@ void downloadXmodem(const char *line, int length)
 
 done:
 	// Slot 2 -> Bank 2
-	cartWrite(0xFFFF, 2);
 
+	mapper_setSlot(SLOT2, 2);
 }
 
 void menu_handleLine(const uint8_t *line, int length)
@@ -536,6 +600,7 @@ void menu_handleLine(const uint8_t *line, int length)
 		{ PSTR("fw"), flashWrite, PSTR("addresshex hexbyte") },
 		{ PSTR("d1"), debug1, PSTR("Debug 1") },
 		{ PSTR("d2"), debug2, PSTR("Debug 2") },
+		{ PSTR("m1"), debug_m1, PSTR("M test 1") },
 		{ }
 	};
 

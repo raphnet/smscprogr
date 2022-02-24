@@ -20,6 +20,23 @@
 
 static struct flashops *ops = &flash_29f040_ops;
 
+void flash_init(void)
+{
+	uint16_t id;
+
+	ops = &flash_29f040_ops;
+
+	id = flash_29lv320_ops.readSiliconID();
+	if (id == 0xa7c2) {
+		ops = &flash_29lv320_ops;
+	}
+
+	if (id == 0x5001) {
+		ops = &flash_29lv320_ops;
+	}
+
+}
+
 uint16_t flash_readSiliconID(void)
 {
 	return ops->readSiliconID();

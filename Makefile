@@ -9,7 +9,7 @@ CFLAGS=-Wall -mmcu=$(CPU) -DF_CPU=16000000L -DF_EXTERNAL=F_CPU -Os -DVERSIONSTR=
 LDFLAGS=-mmcu=$(CPU) -Wl,-Map=$(PROGNAME).map
 
 HEXFILE=smscprogr.hex
-OBJS=main.o usb.o usbcomm.o usbstrings.o menu.o cartio.o bootloader.o flash.o flash_29f040.o
+OBJS=main.o usb.o usbcomm.o usbstrings.o menu.o cartio.o mapper.o bootloader.o flash.o flash_29f040.o flash_29lv320.o
 
 all: $(HEXFILE)
 

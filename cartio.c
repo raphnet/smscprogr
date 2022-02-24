@@ -15,11 +15,13 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <stdio.h>
 
 #define CPLD_SET_LE() PORTC |= 0x80
 #define CPLD_CLR_LE() PORTC &= 0x7F
-#define CPLD_PULSE_LE() do { CPLD_SET_LE(); _delay_us(1); CPLD_CLR_LE(); _delay_us(1); } while(0)
+#define CPLD_PULSE_LE() do { CPLD_SET_LE(); _delay_us(0.5); CPLD_CLR_LE(); _delay_us(1); } while(0)
 
 #define CE_LOW()	PORTC &= ~0x20
 #define CE_HIGH()	PORTC |= 0x20
@@ -28,17 +30,36 @@
 #define WR_LOW()	PORTC &= ~0x10
 #define WR_HIGH()	PORTC |= 0x10
 
+#define CLK_HIGH()	PORTC |= 0x40
+#define CLK_LOW()	PORTC &= ~0x40
+
 #define SET_DATA(v)	PORTB = v
 #define GET_DATA()	PINB
 #define FLOAT_DATA() DDRB = 0
 #define DRIVE_DATA() DDRB = 0xff
 
-#define WR_DLY()	_delay_us(1)
-#define RD_DLY()	_delay_us(1)
+#define WR_DLY()	_delay_us(0.5)
+#define RD_DLY()	_delay_us(0.5)
 
-static inline void setCartAddress(uint16_t addr)
+#define CLK_DLY()	_delay_us(0.5)
+
+static uint8_t s_first = 1;
+static uint16_t s_cur_address;
+
+static void setCartAddress(uint16_t addr)
 {
 	uint8_t nib;
+
+	if (s_first) {
+		s_first = 0;
+	} else if (addr == s_cur_address) {
+		_delay_us(5);
+		return;
+	}
+
+	// Save what will be the new address before
+	// addr gets modified!
+	s_cur_address = addr;
 
 	nib = addr & 0xf;
 	addr >>= 4;
@@ -62,6 +83,7 @@ static inline void setCartAddress(uint16_t addr)
 	PORTD &= ~0x3F;
 	PORTD |= 0x30 | nib;
 	CPLD_PULSE_LE();
+
 }
 
 void cartWrite(uint16_t addr, uint8_t b)
@@ -81,7 +103,31 @@ void cartWrite(uint16_t addr, uint8_t b)
 	// Make sure internal pull-ups are ON
 	SET_DATA(0xff);
 	FLOAT_DATA();
+
 }
+
+void cartWriteClk(uint16_t addr, uint8_t b)
+{
+	setCartAddress(addr);
+	SET_DATA(b);
+	DRIVE_DATA();
+
+	CE_LOW();
+	WR_LOW();
+
+	CLK_HIGH();
+	CLK_DLY();
+	CLK_LOW();
+	CLK_DLY();
+
+	WR_HIGH();
+	CE_HIGH();
+
+	// Make sure internal pull-ups are ON
+	SET_DATA(0xff);
+	FLOAT_DATA();
+}
+
 
 uint8_t cartRead(uint16_t addr)
 {
@@ -102,7 +148,6 @@ uint8_t cartRead(uint16_t addr)
 
 	RD_HIGH();
 	CE_HIGH();
-
 
 	return b;
 }
