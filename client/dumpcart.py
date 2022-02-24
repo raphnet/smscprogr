@@ -138,6 +138,8 @@ if (args.infile != None):
     sendAbort()
     tmp = exchangeCommand("")
     tmp = exchangeCommand("")
+    tmp = exchangeCommand("init")
+    print(tmp)
     tmp = exchangeCommand("ce")
     print(tmp)
     upload(args.infile)
