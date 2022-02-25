@@ -11,6 +11,16 @@ visit the project page:
 * [Project page (english)](https://www.raphnet.net/electronique/sms_cartridge_programmer/index_en.php)
 * [Project page (french)](https://www.raphnet.net/electronique/sms_cartridge_programmer/index.php)
 
+Current features are:
+* Cartridge ROM dumping
+* Flash cartridge programming
+* Auto-detects ROM size
+* Supported cartriges:
+  * Supports SMS 50 pin cartridges
+  * SMS 44 pin (Japan) /Mark-III cartriges
+  * SG-1000 Cartridges
+  * Sega Cards (through a card catcher)
+  * Game Gear (using an appropriate adapter)
 
 ## Compilation
 
@@ -43,22 +53,39 @@ Run setup.bat once (optionally edit it first if the paths are different on your 
 
 ## Use
 
-The cartridge reader/programmer can be controlled using your favorite serial terminal software. For instance,
-under Linux the programmer should appear as /dev/ttyACMx and you can simply fire minicom -D /dev/ttyACMx 
-and type ? followed by enter to get a list of available commands.
 
-For examples, please visit the project homepage.
+## Option 1: Using the python gui
+
+There is now a user interface based on PySimpleGUI. At the moment it is only distributed in source code format,
+but eventually I plan to use pyinstaller to make something easier. Dependencies are:
+
+ * python3-serial
+ * xmodem
+
+![smsp.py](client/screenshots/smsp_python_frontend.png)
 
 
-## Python client
+
+## Option 2: Command-line python client
 
 The client/ directory contains a python tool which opens the device (ttyACMx) and types commands for you. If
-you are producing a large batch of cartridges, this is recommended as it is much faster (less typing!).
+you are producing a large batch of cartridges, this is recommended as it is much faster (less typing!), and can
+be more convenient than using the GUI 
 
 The following python packages are required:
 
  * python3-serial
  * xmodem
+ * PySimpleGUI
+
+
+## Option 3: Using a communication program
+
+The cartridge reader/programmer can be controlled using your favorite serial terminal software. For instance,
+under Linux the programmer should appear as /dev/ttyACMx and you can simply fire minicom -D /dev/ttyACMx 
+and type ? followed by enter to get a list of available commands.
+
+ROMs can be dumped or programmed (supported Flash cartridge only) using XModem transfers.
 
 For examples, please visit the project homepage.
 
