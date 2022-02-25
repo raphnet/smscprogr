@@ -316,3 +316,5 @@ int main(void)
 	return 0;
 }
 
+const char g_signature[] PROGMEM = "e591b62a-73c1-4380-8b30-a8c0baeb92e8";
+
