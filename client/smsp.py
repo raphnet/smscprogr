@@ -182,34 +182,39 @@ def getProgrammerInfo(values):
     if not openProgrammer(values):
         return False
 
-    smscprogr.exchangeCommand("")
-    smscprogr.exchangeCommand("")
-    tmp = smscprogr.exchangeCommand("?")
-    #print(tmp)
+    programmerInfo = None
 
-    programmerInfo = { "version": "1.0" }
+    try:
+        smscprogr.exchangeCommand("")
+        smscprogr.exchangeCommand("")
+        tmp = smscprogr.exchangeCommand("?")
+        #print(tmp)
 
-    programmerInfo["caps"] = [ ];
+        programmerInfo = { "version": "1.0" }
 
-    if "version" in tmp:
-        tmp = smscprogr.exchangeCommand("version")
+        programmerInfo["caps"] = [ ];
 
-        # Sample output:
-        #
-        #   ...
-        #       "Version: 1.1\r\n"
-        #   ...
+        if "version" in tmp:
+            tmp = smscprogr.exchangeCommand("version")
 
-        lines = tmp.split("\r\n")
-        tmpv = [v.split(": ")[1] for v in lines if "Version:" in v][0]
-        #print(tmpv)
+            # Sample output:
+            #
+            #   ...
+            #       "Version: 1.1\r\n"
+            #   ...
 
-        programmerInfo["version"] = tmpv
+            lines = tmp.split("\r\n")
+            tmpv = [v.split(": ")[1] for v in lines if "Version:" in v][0]
+            #print(tmpv)
+
+            programmerInfo["version"] = tmpv
+    except BaseException as e:
+        g_errorMessage = e
+    finally:
+        closeProgrammer();
 
 
     closeProgrammer();
-
-    #print(programmerInfo)
 
     return programmerInfo
 
@@ -226,7 +231,7 @@ def readTobuffer(values):
     try:
         smscprogr.readROM(f)
         g_read_buffer = f.getvalue();
-    except smscprogr.SMSCProgrException as e:
+    except BaseException as e:
         g_errorMessage = e
         retval = False
     finally:
@@ -252,7 +257,7 @@ def programFromBuffer(values):
 
     try:
         smscprogr.eraseAndProgram(f)
-    except smscprogr.SMSCProgrException as e:
+    except BaseException as e:
         g_errorMessage = e
         retval = False
     finally:
@@ -274,7 +279,7 @@ def performChipErase(values):
 
     try:
         smscprogr.chipErase()
-    except smscprogr.SMSCProgrException as e:
+    except BaseException as e:
         g_errorMessage = e
         retval = False
     finally:
