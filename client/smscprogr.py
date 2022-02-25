@@ -1,9 +1,10 @@
 import serial, sys, logging, argparse
 from xmodem import XMODEM
-#import xmodem
 
 class SMSCProgrException(Exception):
     pass
+
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 rxbytes = 0
 rxbytes2 = 0
@@ -28,7 +29,7 @@ def sendAbort():
 def exchangeCommand(command, ender="\r\n> ", atEnd=True):
     ser.reset_input_buffer()    # Drop any unread characters
     sendCommand(command)        # Send the command
-    # Now wait to the answer
+    # Now wait for the answer
     answer = ""
     ser.timeout = 0.1
     while True:
@@ -42,6 +43,7 @@ def exchangeCommand(command, ender="\r\n> ", atEnd=True):
             else:
                 if ender in answer:
                     break
+
     return answer
 
 
@@ -71,12 +73,13 @@ def upload(infile):
     txbytes2 = 0
 
     print("Starting upload")
-    # Initiate xmodem download
-    exchangeCommand("ux", "READY. Please start uploading.\r\n", atEnd=False)
+
+    # Initiate xmodem download, wait for the initial NAK character
+    exchangeCommand("ux", "\x15", atEnd=True)
 
     xm = XMODEM(getc,  putc)
     print("Uploading", end="", flush=True)
-    n = xm.send(infile, retry=102, quiet=False )
+    n = xm.send(infile, retry=10, timeout=1, quiet=False )
     print("") # newline
     if n:
         print("Upload completed with success.")
