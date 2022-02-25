@@ -51,7 +51,7 @@ def download(outfile):
     rxbutes=0
     rxbytes2=0
 
-    print("Starting downlaod")
+    print("Starting download")
     # Initiate xmodem download
     exchangeCommand("dx", "CTRL+C to cancel.\r\n")
 
