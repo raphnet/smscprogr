@@ -68,6 +68,12 @@ static void reset(const char *line, int length)
 	resetFirmware();
 }
 
+static void showVersion(const char *line, int length)
+{
+	puts_P(PSTR("\nSMSCPROGR: SMS/Mark-III cartridge reader/programmer\n"));
+	puts_P(PSTR("Version: " VERSIONSTR));
+}
+
 static uint8_t cartrange_is_all_ff(uint16_t addr_start, uint16_t len)
 {
 	uint8_t b;
@@ -592,6 +598,7 @@ void menu_handleLine(const uint8_t *line, int length)
 	} handlers[] = {
 		{ PSTR("boot"), boot, PSTR("Enter DFU bootloader") },
 		{ PSTR("reset"), reset, PSTR("Reset the firmware") },
+		{ PSTR("version"), showVersion, PSTR("Show version") },
 		{ PSTR("init"), initCart, PSTR("Init. mapper hw, detect cart size, detect flash...") },
 		{ PSTR("r "), readaddress, PSTR("addresshex [length]") },
 		{ PSTR("dx"), downloadXmodem, PSTR("Download the ROM with XModem") },

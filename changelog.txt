@@ -1,4 +1,5 @@
 Current work in progress:
+	- Implemented a version command
 	- Add support for multiple flash types (added 29LV320 and S29JL032)
 	- Disables write protect (sets mapper FFFC bit 7) when programming
 
