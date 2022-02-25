@@ -159,6 +159,8 @@ def openProgrammer(values):
         if not smscprogr.open(devpath):
             return False
 
+    smscprogr.sendAbort()
+
     smscprogr.exchangeCommand("")
     smscprogr.exchangeCommand("")
 
@@ -412,7 +414,7 @@ def updateProgress(value):
     progressWindow.write_event_value('-PROGRESSUPDATE-', value)
 
 
-def createProgressDialog(caption = "Progress"):
+def createProgressDialog(caption = "Progress", disable_close = False):
     global progressWindow
 
     if progressWindow:
@@ -421,12 +423,12 @@ def createProgressDialog(caption = "Progress"):
     layout_progressDialog = [
         [ sg.Text("Operation in progress...") ],
         [ sg.Text(caption), sg.Text(key="-PROGRESS VALUE-") ],
-        [ sg.Cancel() ],
+        [ sg.Cancel(disabled = disable_close) ],
     ]
 
     smscprogr.setProgressCallback(updateProgress)
 
-    progressWindow = sg.Window("In progress...", layout_progressDialog, modal=True, finalize=True)
+    progressWindow = sg.Window("In progress...", layout_progressDialog, modal=True, finalize=True, disable_close=disable_close)
 
 
 
@@ -531,6 +533,7 @@ while True:
             while True:
                 event2, values2 = progressWindow.read()
                 if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                    smscprogr.sendAbort()
                     break
                 if event2 == '-OP-ENDED-':
                     g_bufferdata = g_read_buffer
@@ -553,6 +556,7 @@ while True:
             while True:
                 event2, values2 = progressWindow.read()
                 if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                    smscprogr.sendAbort()
                     break
                 if event2 == '-OP-ENDED-':
                     if len(g_read_buffer) < 0:
@@ -591,6 +595,7 @@ while True:
                 while True:
                     event2, values2 = progressWindow.read()
                     if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                        smscprogr.sendAbort()
                         break
                     if event2 == '-OP-ENDED-':
                         if g_bufferdata == g_read_buffer:
@@ -618,7 +623,7 @@ while True:
 
 
         if values['-OP-CHIP-ERASE-']:
-            createProgressDialog("Erasing - This can take over 30 seconds!")
+            createProgressDialog("Erasing - This can take over 30 seconds!", disable_close=True)
             progressWindow.perform_long_operation(lambda: performChipErase(values), "-OP-ENDED-")
 
             while True:
@@ -640,6 +645,7 @@ while True:
             while True:
                 event2, values2 = progressWindow.read()
                 if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                    smscprogr.sendAbort()
                     break
                 if event2 == '-OP-ENDED-':
                     break
