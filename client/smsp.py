@@ -22,7 +22,7 @@ g_portlist = [ ]
 g_last_opened_port = ""
 
 
-g_rom_filetypes = [ ("SMS ROM", "*.SMS *.sms"), ("GAME GEAR ROM", "*.GG *.gg") ]
+g_rom_filetypes = [ ("SMS ROM", "*.SMS *.sms"), ("GAME GEAR ROM", "*.GG *.gg"), ("SG-1000 ROM", "*.SG *.sg"), ("All files", "*.* *") ]
 
 layout_operations = [
     [ sg.Radio(text="Read", default=True, group_id="-GRP-OPS-", key="-OP-READ-", tooltip="Read cartridge to buffer.") ],
