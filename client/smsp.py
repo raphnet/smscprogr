@@ -165,12 +165,15 @@ def openProgrammer(values):
     g_last_opened_port = selection[0]
     sg.user_settings_set_entry("-lastport-", g_last_opened_port)
 
+    print("Programmed opened")
+
     return True
 
 
 
 def closeProgrammer():
     smscprogr.close()
+    print("Programmed closed")
 
 
 def getProgrammerInfo(values):
