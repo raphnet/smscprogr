@@ -32,7 +32,7 @@ smscprogr.elf: $(OBJS)
 	avr-objcopy -j .data -j .text -O ihex $< $@
 	avr-size $< -C --mcu=$(CPU)
 
-flash: $(all)
+flash: $(HEXFILE)
 #	- ./scripts/enter_bootloader.sh
 	./scripts/wait_then_flash.sh $(CPU) $(HEXFILE)
 
