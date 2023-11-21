@@ -28,6 +28,7 @@ layout_operations = [
     [ sg.Radio(text="Read", default=True, group_id="-GRP-OPS-", key="-OP-READ-", tooltip="Read cartridge to buffer.") ],
     [ sg.Radio(text="Verify", group_id="-GRP-OPS-", key="-OP-VERIFY-", tooltip="Read cartridge and compare to buffer. Buffer left as is.") ],
     [ sg.Radio(text="Program", group_id="-GRP-OPS-", key="-OP-PROG-", tooltip="Erase and program cartridge with data from buffer") ],
+    [ sg.Radio(text="Program only", group_id="-GRP-OPS-", key="-OP-PROGONLY-", tooltip="Orogram cartridge with data from buffer without erasing it first. (Use only for known blank cartridge)") ],
     [ sg.Radio(text="Chip erase", group_id="-GRP-OPS-", key="-OP-CHIP-ERASE-", tooltip="Perform a chip erase operation") ],
     [ sg.Radio(text="Blank check", group_id="-GRP-OPS-", key="-OP-BLANK-CHECK-", tooltip="Verify if the cartridge is blank") ],
     [ sg.Button("Run", key='-RUN-') ],
@@ -265,6 +266,33 @@ def programFromBuffer(values):
         closeProgrammer();
 
     return retval
+
+
+
+def programOnlyFromBuffer(values):
+    global g_bufferdata, g_errorMessage
+    retval = True
+
+    if not g_bufferdata or len(g_bufferdata) < 1:
+        g_errorMessage = "Buffer is empty - nothing to program"
+        return False
+
+    if not openProgrammer(values):
+        return False
+
+    f = io.BytesIO(g_bufferdata)
+
+    try:
+        smscprogr.program(f)
+    except BaseException as e:
+        g_errorMessage = e
+        retval = False
+    finally:
+        f.close()
+        closeProgrammer();
+
+    return retval
+
 
 
 
@@ -646,6 +674,35 @@ while True:
         if values['-OP-PROG-']:
             createProgressDialog("Transmitted bytes:")
             progressWindow.perform_long_operation(lambda: programFromBuffer(values), "-OP-ENDED-")
+
+            while True:
+                event2, values2 = progressWindow.read()
+                if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                    smscprogr.sendAbort()
+                    break
+                if event2 == '-OP-ENDED-':
+                    break
+                if event2 == '-PROGRESSUPDATE-':
+                    bytesSoFar = values2['-PROGRESSUPDATE-']
+                    percent = (bytesSoFar / len(g_bufferdata)) * 100;
+                    percent = round(percent)
+                    # FIXME: the byte count includes the xmodem overhead so it goes over 100%...
+                    if percent > 100:
+                        percent = 100
+
+                    progressString = str(bytesSoFar) + " / " + str(len(g_bufferdata)) + " (" + str(percent) + "%)"
+                    progressWindow["-PROGRESS VALUE-"].update(progressString)
+                    continue
+                if g_errorMessage:
+                    break
+
+            progressWindow.close()
+            progressWindow = None
+
+
+        if values['-OP-PROGONLY-']:
+            createProgressDialog("Transmitted bytes:")
+            progressWindow.perform_long_operation(lambda: programOnlyFromBuffer(values), "-OP-ENDED-")
 
             while True:
                 event2, values2 = progressWindow.read()

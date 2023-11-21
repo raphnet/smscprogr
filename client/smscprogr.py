@@ -191,6 +191,29 @@ def eraseAndProgram(infile):
     return True
 
 
+def program(infile):
+    exchangeCommand("")
+    exchangeCommand("")
+    tmp = exchangeCommand("init")
+    print(tmp)
+
+    if not "Cartridge type: FLASH" in tmp:
+        raise SMSCProgrException("Cartridge not flash based - cannot chip erase")
+
+    if not "(supported)" in tmp:
+        raise SMSCProgrException("Cartridge flash type not supported yet")
+
+    if progressCb:
+        progressCb(-1)
+
+    upload(infile)
+    exchangeCommand("")
+
+    return True
+
+
+
+
 def readROM(outfile):
     exchangeCommand("")
     exchangeCommand("")
