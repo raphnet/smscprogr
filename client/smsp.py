@@ -168,7 +168,7 @@ def openProgrammer(values):
     g_last_opened_port = selection[0]
     sg.user_settings_set_entry("-lastport-", g_last_opened_port)
 
-    print("Programmed opened")
+    print("Programmer opened")
 
     return True
 
@@ -176,7 +176,7 @@ def openProgrammer(values):
 
 def closeProgrammer():
     smscprogr.close()
-    print("Programmed closed")
+    print("Programmer closed")
 
 
 def getProgrammerInfo(values):
@@ -289,6 +289,25 @@ def programOnlyFromBuffer(values):
         retval = False
     finally:
         f.close()
+        closeProgrammer();
+
+    return retval
+
+
+def performBlankCheck(values):
+    global g_bufferdata, g_errorMessage
+    retval = True
+
+    if not openProgrammer(values):
+        g_errorMessage = "Error opening programmer";
+        return False
+
+    try:
+        smscprogr.blankCheck()
+    except BaseException as e:
+        g_errorMessage = e
+        retval = False
+    finally:
         closeProgrammer();
 
     return retval
@@ -580,6 +599,24 @@ while True:
 
             progressWindow.close()
             progressWindow = None
+
+
+        if values['-OP-REMOTE-BLANK-CHECK-']:
+            createProgressDialog("Checking if flash is blank...", disable_close=True)
+            progressWindow.perform_long_operation(lambda: performBlankCheck(values), "-OP-ENDED-")
+
+            while True:
+                event2, values2 = progressWindow.read()
+                if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                    break
+                if event2 == '-OP-ENDED-':
+                    #syncBufferInfo("From cartridge")
+                    break
+
+            progressWindow.close()
+            progressWindow = None
+
+
 
 
         if values['-OP-BLANK-CHECK-']:
