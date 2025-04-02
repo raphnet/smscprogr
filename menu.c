@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <avr/pgmspace.h>
 #include <util/crc16.h>
 #include <util/delay.h>
@@ -28,11 +29,25 @@
 #include "usbcomm.h"
 #include "flash.h"
 
+
+static uint8_t is_flash_cartridge; // bool
+static uint32_t s_flash_size; // holds capacity of flash
+
 static uint32_t s_rom_size = 0x8000;
+
+static void printFLASHsize(void)
+{
+	printf_P(PSTR("Flash size is %" PRIu32 "\n"), s_flash_size);
+}
+
+
+static void printROMsize(void)
+{
+	printf_P(PSTR("ROM size set to %" PRIu32 "\n"), s_rom_size);
+}
 
 static void setROMsize(uint32_t rom_size)
 {
-	printf_P(PSTR("ROM size set to %" PRIu32 "\n"), rom_size);
 	s_rom_size = rom_size;
 }
 
@@ -164,6 +179,25 @@ static void debug1()
 
 }
 
+static void printFlashInfo(uint16_t id)
+{
+	uint8_t manufacturer, device;
+
+	manufacturer = id;
+	device = id >> 8;
+
+	printf_P(PSTR("Cartridge type: FLASH. Manufacturer ID=0x%02x, Device=0x%02x => "), manufacturer, device);
+
+	switch(id)
+	{
+		case 0xa4c2: puts_P(PSTR("MX29F040 (supported)")); break;
+		case 0xa7c2: puts_P(PSTR("MX29LV320 (supported)")); break;
+		case 0x5001: puts_P(PSTR("S29JL032 (supported)")); break;
+		default: puts_P(PSTR(" (unknown/unsupported)")); break;
+	}
+}
+
+
 static void initCart(const char *line, int length)
 {
 	uint8_t rom_header[16];
@@ -218,33 +252,121 @@ static void initCart(const char *line, int length)
 		}
 	}
 	setROMsize(i * 16384UL);
+	printROMsize();
 
 	if (flash_detect()) {
-		uint8_t manufacturer, device;
-
+		is_flash_cartridge = 1;
 		id = flash_readSiliconID();
-
-		manufacturer = id;
-		device = id >> 8;
-
-		printf_P(PSTR("Cartridge type: FLASH. Manufacturer ID=0x%02x, Device=0x%02x => "), manufacturer, device);
-
-		if (id == 0xa4c2) {
-			puts_P(PSTR("MX29F040 (supported)\n"));
-		}
-		else if (id == 0xa7c2) {
-			puts_P(PSTR("MX29LV320 (supported)\n"));
-		}
-		else if (id == 0x5001) {
-			puts_P(PSTR("S29JL032 (supported)\n"));
-		} else {
-			puts_P(PSTR(" (unknown/unsupported)\n"));
-		}
+		printFlashInfo(id);
+		s_flash_size = flash_getMaxSize(id);
+		printFLASHsize();
 	} else {
+		is_flash_cartridge = 0;
 		puts_P(PSTR("Cartridge type: ROM"));
 	}
 
 	mapper_init(MAPPER_TYPE_SEGA);
+}
+
+static void cmd_info(const char *line, int length)
+{
+	uint16_t id;
+
+	newline();
+	printROMsize();
+
+	printf_P(PSTR("Mapper type: "));
+	switch(mapper_getCurrentType())
+	{
+		default: puts_P(PSTR("Unknown / invalid")); break;
+		case MAPPER_TYPE_NONE: puts_P(PSTR("None")); break;
+		case MAPPER_TYPE_SEGA: puts_P(PSTR("Sega")); break;
+	}
+
+	if (flash_detect()) {
+		id = flash_readSiliconID();
+		printFlashInfo(id);
+		printFLASHsize();
+	} else {
+		puts_P(PSTR("Cartridge type: ROM"));
+	}
+
+	newline();
+}
+
+
+
+static void cmd_setromsize(const char *line, int length)
+{
+	uint32_t size;
+	char *s, *e;
+
+	s = strstr(line, PSTR("setromsize "));
+	if (!s)
+		return;
+
+	s += 10; // skip command
+
+	size = strtoul(s, &e, 0);
+
+	if (size == 0 || s == e) {
+		error();
+		return;
+	}
+
+	newline();
+
+	setROMsize(size);
+	printROMsize();
+
+	newline();
+}
+
+static void cmd_blankcheck(const char *line, int length)
+{
+	uint32_t rom_addr;
+	uint8_t b;
+	uint32_t size;
+
+	newline();
+	puts_P(PSTR("Checking if chip is blank..."));
+
+	if (!is_flash_cartridge) {
+		puts_P(PSTR("Warning: Not a flash cartridge. Using auto-detected size..."));
+		size = s_rom_size;
+	} else {
+		size = s_flash_size;
+	}
+
+	usbcomm_drain();
+
+	// Slot 0 -> Bank 0
+	mapper_setSlot(SLOT0, 0);
+	// Slot 1 -> Bank 1
+	mapper_setSlot(SLOT1, 1);
+
+	for (rom_addr=0; rom_addr < size; rom_addr++) {
+
+		// Read bank0/1 using slot0/1 to support mapperless cartridges.
+		if (rom_addr < 0x8000) {
+			b = cartRead(rom_addr);
+		} else {
+			// Use slot2 as a window in the ROM
+			if ((rom_addr & 0x3FFF)==0) {
+				// Only set when page changes (faster)
+				mapper_setSlot(SLOT2, (rom_addr >> 14));
+			}
+			b = cartRead(0x8000 | (rom_addr & 0x3FFF));
+		}
+
+		if (b != 0xff) {
+			puts_P(PSTR("Cartridge is blank: NO"));
+			return;
+		}
+	}
+	newline();
+
+	puts_P(PSTR("Cartridge is blank: YES"));
 }
 
 static void readaddress(const char *line, int length)
@@ -600,6 +722,9 @@ void menu_handleLine(const uint8_t *line, int length)
 		{ PSTR("reset"), reset, PSTR("Reset the firmware") },
 		{ PSTR("version"), showVersion, PSTR("Show version") },
 		{ PSTR("init"), initCart, PSTR("Init. mapper hw, detect cart size, detect flash...") },
+		{ PSTR("info"), cmd_info, PSTR("Display current info/setup") },
+		{ PSTR("setromsize "), cmd_setromsize, PSTR("Set download/blankcheck size") },
+		{ PSTR("bc"), cmd_blankcheck, PSTR("Check if cartridge is blank") },
 		{ PSTR("r "), readaddress, PSTR("addresshex [length]") },
 		{ PSTR("dx"), downloadXmodem, PSTR("Download the ROM with XModem") },
 		{ PSTR("ux"), uploadXmodem, PSTR("Upload and program FLASH with XModem") },
@@ -627,9 +752,8 @@ void menu_handleLine(const uint8_t *line, int length)
 		puts_P(PSTR("Supported commands:"));
 		for (i=0; handlers[i].handler; i++) {
 			printf_P(PSTR("  "));
-			printf_P(handlers[i].cmd);
+			printf_P(PSTR("  %-12S  "), handlers[i].cmd);
 			if (handlers[i].help) {
-				printf_P(PSTR("    "));
 				printf_P(handlers[i].help);
 			}
 			newline();

@@ -30,11 +30,9 @@ void flash_init(void)
 	if (id == 0xa7c2) {
 		ops = &flash_29lv320_ops;
 	}
-
 	if (id == 0x5001) {
 		ops = &flash_29lv320_ops;
 	}
-
 }
 
 uint16_t flash_readSiliconID(void)
@@ -60,5 +58,17 @@ void flash_programBytes(uint16_t cartAddr, uint8_t *data, int len)
 void flash_programByte(uint16_t cartAddr, uint8_t b)
 {
 	ops->programByte(cartAddr, b);
+}
+
+uint32_t flash_getMaxSize(uint16_t flash_id)
+{
+	switch(flash_id)
+	{
+		case 0xa4c2: return 524288; // MX29F040     512K
+		case 0xa7c2: return 4194304; // MX29LV320   4M
+		case 0x5001: return 4194304; // S29JL032    4M
+	}
+
+	return 4194304; // assume the max possible with Sega mapper
 }
 

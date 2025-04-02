@@ -12,6 +12,7 @@ enum {
 
 void mapper_init(uint8_t type);
 void mapper_setSlot(uint8_t slot, uint8_t bank);
+uint8_t mapper_getCurrentType(void);
 
 #endif // _mapper_h__
 

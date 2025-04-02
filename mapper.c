@@ -25,4 +25,9 @@ void mapper_setSlot(uint8_t slot, uint8_t bank)
 	cartWriteClk(0xFFFD+slot,bank);
 }
 
+uint8_t mapper_getCurrentType(void)
+{
+	return mapper_type;
+}
+
 
