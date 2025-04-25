@@ -135,7 +135,6 @@ static void debug2()
 
 static void debug_m1()
 {
-	uint8_t tmpbuf[16];
 	uint16_t id;
 
 	mapper_init(MAPPER_TYPE_SEGA);
