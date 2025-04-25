@@ -166,6 +166,23 @@ def chipErase():
     return True
 
 
+def blankCheck():
+    exchangeCommand("")
+    exchangeCommand("")
+    tmp = exchangeCommand("init")
+    print(tmp)
+
+    print("Blank checking...")
+    tmp = exchangeCommand("bc")
+    exchangeCommand("")
+    print(tmp)
+
+    if not "Cartridge is blank: YES" in tmp:
+        return False
+
+    return True
+
+
 def eraseAndProgram(infile):
     exchangeCommand("")
     exchangeCommand("")

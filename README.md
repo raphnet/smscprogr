@@ -56,9 +56,10 @@ Run setup.bat once (optionally edit it first if the paths are different on your 
 
 ## Option 1: Using the python gui
 
-There is now a user interface based on PySimpleGUI. At the moment it is only distributed in source code format,
+There is now a user interface based on FreeSimpleGUI. At the moment it is only distributed in source code format,
 but eventually I plan to use pyinstaller to make something easier. Dependencies are:
 
+ * FreeSimpleGUI
  * python3-serial
  * xmodem
 
