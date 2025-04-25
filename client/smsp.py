@@ -1,8 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import io, sys, os, subprocess, time
 
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import smscprogr
 import hashlib
 import serial, serial.tools.list_ports
@@ -18,6 +18,7 @@ g_read_buffer = b""
 g_portnames = [ ]
 g_portdevices = [ ]
 g_portlist = [ ]
+g_programmer_info = [ ]
 
 g_last_opened_port = ""
 
@@ -209,6 +210,8 @@ def getProgrammerInfo(values):
             #print(tmpv)
 
             programmerInfo["version"] = tmpv
+            programmerInfo["caps"].append("blankcheck")
+
     except BaseException as e:
         g_errorMessage = e
     finally:
@@ -303,7 +306,10 @@ def performBlankCheck(values):
         return False
 
     try:
-        smscprogr.blankCheck()
+        retval = smscprogr.blankCheck()
+        if not retval:
+            g_errorMessage = "Cartridge not blank";
+            return False;
     except BaseException as e:
         g_errorMessage = e
         retval = False
@@ -493,11 +499,14 @@ def loadSettings():
 
 
 def syncProgrammerInfos(values):
+    global g_programmer_info
+
     if values['-SELECTED-PORT-']:
         v = getProgrammerInfo(values)
         if v:
             print("Programmer version: ", v['version'])
             window['-TXT-VERSION-'].update(v['version'])
+            g_programmer_info = v
         else:
             sg.popup_error("Could not determine adapter version. Wrong port?")
 
@@ -601,57 +610,60 @@ while True:
             progressWindow = None
 
 
-        if values['-OP-REMOTE-BLANK-CHECK-']:
-            createProgressDialog("Checking if flash is blank...", disable_close=True)
-            progressWindow.perform_long_operation(lambda: performBlankCheck(values), "-OP-ENDED-")
-
-            while True:
-                event2, values2 = progressWindow.read()
-                if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
-                    break
-                if event2 == '-OP-ENDED-':
-                    #syncBufferInfo("From cartridge")
-                    break
-
-            progressWindow.close()
-            progressWindow = None
-
-
-
-
         if values['-OP-BLANK-CHECK-']:
-            createProgressDialog("Checked bytes:")
-            progressWindow.perform_long_operation(lambda: readTobuffer(values), "-OP-ENDED-")
 
-            while True:
-                event2, values2 = progressWindow.read()
-                if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
-                    smscprogr.sendAbort()
-                    break
-                if event2 == '-OP-ENDED-':
-                    if len(g_read_buffer) < 0:
-                        g_errorMessage = "Received zero bytes?!"
+            if "blankcheck" in g_programmer_info["caps"]:
+                createProgressDialog("Checking if flash is blank...", disable_close=True)
+                progressWindow.perform_long_operation(lambda: performBlankCheck(values), "-OP-ENDED-")
+
+                while True:
+                    event2, values2 = progressWindow.read()
+                    if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                        break
+                    if event2 == '-OP-ENDED-':
+                        #syncBufferInfo("From cartridge")
+                        if not g_errorMessage:
+                            g_okMessage = "Cartridge is blank"
                         break
 
-                    ffcount = 0
-                    for val in g_read_buffer:
-                        if val != 0xFF:
-                            ffcount += 1
+                progressWindow.close()
+                progressWindow = None
 
-                    if ffcount > 0:
-                        g_errorMessage = "Not blank. " + str(round(ffcount / len(g_read_buffer))) + "% free"
-                    else:
-                        g_okMessage = "Verify ok"
 
-                    break
-                if event2 == '-PROGRESSUPDATE-':
-                    progressWindow["-PROGRESS VALUE-"].update(values2['-PROGRESSUPDATE-'])
-                    continue
-                if g_errorMessage:
-                    break
+            else:
+                createProgressDialog("Checked bytes:")
+                progressWindow.perform_long_operation(lambda: readTobuffer(values), "-OP-ENDED-")
 
-            progressWindow.close()
-            progressWindow = None
+                while True:
+                    event2, values2 = progressWindow.read()
+                    if event2 == 'Cancel' or event2 == sg.WIN_CLOSED:
+                        smscprogr.sendAbort()
+                        break
+                    if event2 == '-OP-ENDED-':
+                        if len(g_read_buffer) < 0:
+                            g_errorMessage = "Received zero bytes?!"
+                            break
+
+                        ffcount = 0
+                        for val in g_read_buffer:
+                            if val != 0xFF:
+                                ffcount += 1
+
+                        if ffcount > 0:
+                            g_errorMessage = "Not blank. " + str(round(ffcount / len(g_read_buffer))) + "% free"
+                        else:
+                            g_okMessage = "Verify ok"
+
+                        break
+                    if event2 == '-PROGRESSUPDATE-':
+                        progressWindow["-PROGRESS VALUE-"].update(values2['-PROGRESSUPDATE-'])
+                        continue
+                    if g_errorMessage:
+                        break
+
+                progressWindow.close()
+                progressWindow = None
+
 
 
 
