@@ -127,7 +127,8 @@ def open(device):
     global ser
     try:
         ser = serial.Serial(device, 115200, 8)
-    except:
+    except Exception as e:
+        print(e)
         return False
 
     if ser == None:

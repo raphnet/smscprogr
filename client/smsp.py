@@ -159,6 +159,7 @@ def openProgrammer(values):
         print("Device path:", devpath)
 
         if not smscprogr.open(devpath):
+            print("Could not open port")
             return False
 
     smscprogr.sendAbort()
@@ -508,7 +509,7 @@ def syncProgrammerInfos(values):
             window['-TXT-VERSION-'].update(v['version'])
             g_programmer_info = v
         else:
-            sg.popup_error("Could not determine adapter version. Wrong port?")
+            sg.popup_error("Could not determine adapter version.")
 
 
 window = sg.Window("SMSP", layout, finalize=True, resizable=True)
