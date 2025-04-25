@@ -1,10 +1,12 @@
-Current work in progress:
-	- Implemented a version command
-	- Add support for multiple flash types (added 29LV320 and S29JL032)
-	- Disables write protect (sets mapper FFFC bit 7) when programming
-	- Add "bc" (blank check) command, to check if the FLASH (not the
-	auto-detected "ROM" size) is blank.
-	- Add "setromsize" command, to force a different size than what init detected.
+Version 1.2 - 2025-04-26
+	- [firmware] Implemented a version command
+	- [firmware] Add support for multiple flash types (added 29LV320 and S29JL032)
+	- [firmware] Disables write protect (sets mapper FFFC bit 7) when programming
+	- [firmware] Add "bc" (blank check) command, to check if the FLASH (not the
+	  auto-detected "ROM" size) is blank.
+	- [firmware] Add "setromsize" command, to force a different size than what init detected.
+	- [python command-line and GUI] Improve error reporting when opening the port fails.
+	- [python GUI] Migrate to FreeSimpleGUI
 
 February 2021: Release 1.0
 	- Auto-detect ROM size
