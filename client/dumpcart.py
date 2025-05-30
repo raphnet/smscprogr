@@ -10,13 +10,20 @@ import serial, sys, logging, argparse, datetime
 import serial.tools.list_ports
 from xmodem import XMODEM
 
+verbose_mode = False
 rxbytes = 0
 rxbytes2 = 0
 last_exch_start_time_start = 0
 last_exch_duration = 0
 
+programmer_caps = [ ];
+# firmware 1.0 did not have the 'version' command
+programmer_version_str = "1.0"
+# major major * 100 + minor
+programmer_version = 100
+
 def sendCommand(command):
-    if command:
+    if command and verbose_mode:
         print("Sending command: " + command)
     ser.write(bytes(command + "\r\n", "ASCII"))
     ser.flush()
@@ -26,7 +33,6 @@ def sendAbort():
     ser.flush()
     ser.write(b'\x03')
     ser.flush()
-
 
 def exchangeCommand(command, ender="\r\n> ", atEnd=True):
     global last_exch_duration
@@ -50,6 +56,23 @@ def exchangeCommand(command, ender="\r\n> ", atEnd=True):
                     break
     last_exch_duration = (datetime.datetime.now() - last_exch_start_time_start).total_seconds();
     return answer
+
+def readProgrammerInfo():
+    exchangeCommand("")
+    exchangeCommand("")
+    tmp = exchangeCommand("version")
+    if "version" in tmp:
+        lines = tmp.split("\r\n")
+        tmpv = [v.split(": ")[1] for v in lines if "Version:" in v][0]
+        programmer_version_str = tmpv
+        major = int(tmpv.split(".")[0])
+        minor = int(tmpv.split(".")[0])
+        programmer_version = major * 100 + minor
+
+        # Command introduced in version 1.2
+        if programmer_version >= 102:
+            programmer_caps.append("blankcheck")
+            programmer_caps.append("setromsize")
 
 
 def download(outfile):
@@ -112,13 +135,17 @@ logging.basicConfig(filename='example.log', level=logging.DEBUG)
 
 
 parser = argparse.ArgumentParser(description='Dump/Program tool for smscprogr')
-parser.add_argument("-i", '--info', help='Provide information about the cartridge', action='store_true')
+parser.add_argument("-i", '--info', help='Provide information about the programmer and cartridge', action='store_true')
+parser.add_argument("-b", '--blankcheck', help='Check if a FLASH cartridge is blank', action='store_true')
 parser.add_argument("-r", '--read', help='Read the cartridge contents to a file.', type=argparse.FileType('wb'), dest='outfile')
 parser.add_argument("-p", '--prog', help='(Re)program the cartridge with contents of file', type=argparse.FileType('rb'), dest='infile')
 parser.add_argument("-d", "--device", help='Use specified character device.', action='store', default='/dev/ttyACM0')
 parser.add_argument("-l", '--listports', help='List serial ports', action='store_true')
-args = parser.parse_args()
+parser.add_argument("-v", '--verbose', help='Enable verbose output', action='store_true')
+parser.add_argument('--bootloader', help='Restart programmer in bootloader for FW update', action='store_true')
 
+args = parser.parse_args()
+verbose_mode = args.verbose
 
 if (args.listports):
     portlist = serial.tools.list_ports.comports()
@@ -134,13 +161,40 @@ except Exception as e:
         print("Try -l to list available ports?")
         exit()
 
-if (args.info):
-    sendAbort()
-    tmp = exchangeCommand("")
-    tmp = exchangeCommand("")
-    tmp = exchangeCommand("init")
+
+if (args.bootloader):
+    try:
+        exchangeCommand("bootloader")
+    except Exception as e:
+        print("Programmer disconnected.")
+        print("")
+
+    print("Just sent the 'bootloader' command to the programmer, which causes the firmware to")
+    print("jump into the built-in Atmel DFU bootloader.")
+    print("")
+    print("The programmer will not appear as a serial port until one of the conditions below occur:")
+    print("")
+    print("  - It is diconnected and reconnected to USB")
+    print("  - The firmware is started through dfu-programmer 'start' command.")
+    print("")
+    print("You may now use dfu-programmer to manually program a new firmware.")
+    print("")
+    print("Typically the next steps are:")
+    print("")
+    print("  dfu-programmer atmega32u2 erase")
+    print("  dfu-programmer atmega32u2 flash firmware.hex")
+    print("  dfu-programmer atmega32u2 start")
+    print("")
+    exit()
+
+
+if (args.blankcheck):
+    readProgrammerInfo()
+    if "blankcheck" not in programmer_caps:
+        print("Error: Programmer firmware does not support blank check")
+        exit()
+    tmp = exchangeCommand("bc")
     print(tmp)
-    tmp = exchangeCommand("")
 
 
 
@@ -166,6 +220,17 @@ if (args.infile != None):
     print("Chip erase completed in", last_exch_duration, " seconds")
     upload(args.infile)
     tmp = exchangeCommand("")
+
+
+if (args.info):
+    readProgrammerInfo()
+    print("Programmer version:", programmer_version)
+    tmp = exchangeCommand("")
+    tmp = exchangeCommand("")
+    tmp = exchangeCommand("init")
+    print(tmp)
+    tmp = exchangeCommand("")
+
 
 
 
