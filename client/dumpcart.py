@@ -16,7 +16,8 @@ last_exch_start_time_start = 0
 last_exch_duration = 0
 
 def sendCommand(command):
-    print("Sending command: " + command)
+    if command:
+        print("Sending command: " + command)
     ser.write(bytes(command + "\r\n", "ASCII"))
     ser.flush()
 
