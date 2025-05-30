@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
 # apt install python3-serial
+
+# apt install python3-xmodem
+#   or
 # pip3 install xmodem
 
 import serial, sys, logging, argparse, datetime
+import serial.tools.list_ports
 from xmodem import XMODEM
 
 rxbytes = 0
@@ -111,15 +115,23 @@ parser.add_argument("-i", '--info', help='Provide information about the cartridg
 parser.add_argument("-r", '--read', help='Read the cartridge contents to a file.', type=argparse.FileType('wb'), dest='outfile')
 parser.add_argument("-p", '--prog', help='(Re)program the cartridge with contents of file', type=argparse.FileType('rb'), dest='infile')
 parser.add_argument("-d", "--device", help='Use specified character device.', action='store', default='/dev/ttyACM0')
+parser.add_argument("-l", '--listports', help='List serial ports', action='store_true')
 args = parser.parse_args()
 
 
-ser = serial.Serial(args.device, 115200, 8)
-if (ser == None):
-    print("Could not open serial port")
+if (args.listports):
+    portlist = serial.tools.list_ports.comports()
+    for port in portlist:
+        print(port.name, "(", port.device, ")")
     exit()
 
-
+try:
+    ser = serial.Serial(args.device, 115200, 8)
+except Exception as e:
+        print(e)
+        print("Could not open serial port")
+        print("Try -l to list available ports?")
+        exit()
 
 if (args.info):
     sendAbort()
