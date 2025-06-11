@@ -32,14 +32,14 @@ if [ -f $RELEASEDIR/$FILENAME ]; then
 	exit 1
 fi
 
-if [ ! -x scripts/git_archive_all.py ]; then
-	echo "scripts/git_archive_all.py not found"
+if [ ! -x util/git_archive_all.py ]; then
+	echo "util/git_archive_all.py not found"
 	exit 1
 fi
 
 git tag $TAG -f -a
 #git archive-all --format=tar --prefix=$DIRNAME/ HEAD | gzip > $RELEASEDIR/$FILENAME
-./scripts/git_archive_all.py -v --prefix=$DIRNAME $RELEASEDIR/$FILENAME
+./util/git_archive_all.py -v --prefix=$DIRNAME $RELEASEDIR/$FILENAME
 
 cd $RELEASEDIR
 tar zxf $FILENAME
