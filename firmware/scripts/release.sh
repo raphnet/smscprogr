@@ -44,8 +44,10 @@ git tag $TAG -f -a
 cd $RELEASEDIR
 tar zxf $FILENAME
 cd $DIRNAME
+cd firmware
 make
-cp $HEXFILE ../$PREFIX-$VERSION.hex
+cp $HEXFILE ../../$PREFIX-$VERSION.hex
+cd ..
 cd ..
 echo
 echo
