@@ -14,7 +14,7 @@ visit the project page:
 Current features are:
 * Cartridge ROM dumping
 * Flash cartridge programming
-* Auto-detects ROM size
+* Auto-detects ROM size, or set manually
 * Supported cartriges:
   * Supports SMS 50 pin cartridges
   * SMS 44 pin (Japan) /Mark-III cartriges
@@ -69,15 +69,38 @@ but eventually I plan to use pyinstaller to make something easier. Dependencies 
 
 ## Option 2: Command-line python client
 
-The client/ directory contains a python tool which opens the device (ttyACMx) and types commands for you. If
+The client/ directory contains a python tool called carttool.py which opens the device (ttyACMx) and types commands for you. If
 you are producing a large batch of cartridges, this is recommended as it is much faster (less typing!), and can
-be more convenient than using the GUI 
+be more convenient than using the GUI.
 
 The following python packages are required:
 
  * python3-serial
  * xmodem
- * PySimpleGUI
+
+```
+usage: carttool.py [-h] [-i] [-b] [-r outfile.sms] [-p rom.sms] [-d DEVICE] [-l] [-v] [--bootloader]
+                   [--verify] [--update_firmware firmware.hex]
+
+Control tool for smscprogr
+
+options:
+  -h, --help            show this help message and exit
+  -i, --info            Provide information about the programmer and cartridge
+  -b, --blankcheck      Check if a FLASH cartridge is blank
+  -r outfile.sms, --read outfile.sms
+                        Read the cartridge contents to a file.
+  -p rom.sms, --prog rom.sms
+                        (Re)program the cartridge with contents of file
+  -d DEVICE, --device DEVICE
+                        Use specified serial port device.
+  -l, --listports       List serial ports
+  -v, --verbose         Enable verbose output
+  --bootloader          Restart programmer in bootloader for FW update
+  --verify              Read back and compare after programming
+  --update_firmware firmware.hex
+                        Update programmer firmware with hexfile
+```
 
 
 ## Option 3: Using a communication program
