@@ -300,7 +300,7 @@ static void cmd_setromsize(const char *line, int length)
 	uint32_t size;
 	char *s, *e;
 
-	s = strstr(line, PSTR("setromsize "));
+	s = strstr_P(line, PSTR("setromsize "));
 	if (!s)
 		return;
 
