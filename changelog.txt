@@ -1,4 +1,4 @@
-Version 1.3
+Version 1.3 - 2025-06-11
 	- Add verify and firmware update commands to dumpcart.py/carttool.py
 	- Renamed dumpcart.py to carttool.py, as it does more than just dumping cartridges now.
 	- [firmware] Fixed a race condition in USB transmission. (would sometime result in incorrect character echo when typing commands quickly)
