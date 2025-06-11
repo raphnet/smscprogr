@@ -66,11 +66,16 @@ def readProgrammerInfo():
     tmp = exchangeCommand("version")
     if "version" in tmp:
         lines = tmp.split("\r\n")
-        tmpv = [v.split(": ")[1] for v in lines if "Version:" in v][0]
-        programmer_version_str = tmpv
-        major = int(tmpv.split(".")[0])
-        minor = int(tmpv.split(".")[1])
-        programmer_version = major * 100 + minor
+
+        versionLine = [v.split(": ")[1] for v in lines if "Version:" in v]
+
+        # Version 1.0 will return an ERROR and no version information
+        if versionLine:
+            tmpv = versionLine[0]
+            programmer_version_str = tmpv
+            major = int(tmpv.split(".")[0])
+            minor = int(tmpv.split(".")[1])
+            programmer_version = major * 100 + minor
 
         # Command introduced in version 1.2
         if programmer_version >= 102:
