@@ -709,10 +709,13 @@ ISR(USB_COM_vect)
 
 				// Interrupt In and Bulk In endpoints will have this interrupt
 				if (i & (1<<TXINI)) {
-					if (interrupt_data_len[ep] < 0) {
+					if (interrupt_data[ep] == NULL) {
 						// If there's not already data waiting to be
 						// sent, disable the interrupt.
 						UEIENX &= ~(1<<TXINE);
+
+						// signal "user space" that transmission finished
+						interrupt_data_len[ep] = -1;
 					} else {
 						UEINTX &= ~(1<<TXINI);
 						buf2EP(ep,
@@ -722,7 +725,6 @@ ISR(USB_COM_vect)
 								0);
 
 						interrupt_data[ep] = NULL;
-						interrupt_data_len[ep] = -1;
 						UEINTX &= ~(1<<FIFOCON);
 					}
 				}
@@ -767,8 +769,24 @@ void usb_interruptSend(int ep, const void *data, int len)
 	interrupt_data[ep] = data;
 	interrupt_data_len[ep] = len;
 
+	 // Enable interrupt IN for endpoint
 	UENUM = ep;
 	UEIENX |= (1<<TXINE);
+
+	// When the interrupt fires, interrupt_data[ep] will not be NULL.
+	// Interrupt will be acknowledged, then data copied to the FIFO,
+	// and the FIFOCON bit will be cleared to start transmission and
+	// finally interrupt_data[ep] will be set back to NULL.
+	//
+	// Once the transmission is done, the interrupt will fire again,
+	// but interrupt_data[ep] will be found NULL. The interrupt will
+	// be disabled to avoid further interruptions, and interrupt_data_len[ep]
+	// will be set to -1.
+	//
+	// Checking interrupt_data_len[ep] == -1 is therefore how it can be verified that
+	// the transmission is finished and that the endpoint is ready for a new transmission.
+	// (see usb_interruptReady() and ISR(USB_COM_vect))
+	//
 
 	SREG = sreg;
 }
