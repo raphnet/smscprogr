@@ -198,9 +198,9 @@ static void printFlashInfo(uint16_t id)
 		// 8M chip is oversized, but footprint is compatible.
 		case FLASH_ID_MX29LV640:   puts_P(PSTR("MX29LV640 (partially supported)")); break;
 		case FLASH_ID_S29JL032:    puts_P(PSTR("S29JL032 (supported)")); break;
-    case FLASH_ID_SST39SF040:  puts_P(PSTR("SST39SF040 (supported)")); break;
-    case FLASH_ID_SST39SF020A: puts_P(PSTR("SST39SF020A (supported)")); break;
-    case FLASH_ID_SST39SF010A: puts_P(PSTR("SST39SF010A (supported)")); break;
+		case FLASH_ID_SST39SF040:  puts_P(PSTR("SST39SF040 (supported)")); break;
+		case FLASH_ID_SST39SF020A: puts_P(PSTR("SST39SF020A (supported)")); break;
+		case FLASH_ID_SST39SF010A: puts_P(PSTR("SST39SF010A (supported)")); break;
 		default: puts_P(PSTR(" (unknown/unsupported)")); break;
 	}
 }
