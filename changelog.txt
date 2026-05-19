@@ -1,3 +1,6 @@
+Next
+	- Add support for SST39SF040, 020A and 010A flash chips
+
 Version 1.4
 	- [firmware] Add MX29LV640 (8MB chip) detection. (only first 4MB usable)
 	- [firmware] Add w command to write a byte to a given address
