@@ -29,6 +29,7 @@ uint32_t flash_getMaxSize(uint16_t flash_id);
 
 extern struct flashops flash_29f040_ops;
 extern struct flashops flash_29lv320_ops;
+extern struct flashops flash_39sf040_ops;
 
 #endif // _flash_h__
 

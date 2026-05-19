@@ -1,20 +1,20 @@
 CC=avr-gcc
 AS=$(CC)
 LD=$(CC)
-PROGNAME=smscprg1
+PROGNAME=smscprogr
 CPU=atmega32u2
 VERSIONSTR=\"1.4\"
 VERSIONBCD=0x0104
 CFLAGS=-Wall -mmcu=$(CPU) -DF_CPU=16000000L -DF_EXTERNAL=F_CPU -Os -DVERSIONSTR=$(VERSIONSTR) -DVERSIONBCD=$(VERSIONBCD)
 LDFLAGS=-mmcu=$(CPU) -Wl,-Map=$(PROGNAME).map
 
-HEXFILE=smscprogr.hex
-OBJS=main.o usb.o usbcomm.o usbstrings.o menu.o cartio.o mapper.o bootloader.o flash.o flash_29f040.o flash_29lv320.o
+HEXFILE=$(PROGNAME).hex
+OBJS=main.o usb.o usbcomm.o usbstrings.o menu.o cartio.o mapper.o bootloader.o flash.o flash_29f040.o flash_29lv320.o flash_39sf040.o
 
 all: $(HEXFILE)
 
 clean:
-	rm -f *.o *.elf *.hex
+	rm -f *.o *.elf *.hex $(PROGNAME).map
 
 %.o: %.S
 	$(CC) $(CFLAGS) -c $< -o $@
