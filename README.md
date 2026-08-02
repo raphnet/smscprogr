@@ -107,7 +107,7 @@ options:
 
 The cartridge reader/programmer can be controlled using your favorite serial terminal software. For instance,
 under Linux the programmer should appear as /dev/ttyACMx and you can simply fire minicom -D /dev/ttyACMx 
-and type ? followed by enter to get a list of available commands.
+and type ? followed by enter to get a list of available commands. (Note: Baud rate does not matter)
 
 ROMs can be dumped or programmed (supported Flash cartridge only) using XModem transfers.
 
